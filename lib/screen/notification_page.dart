@@ -20,7 +20,7 @@ class _NotificationPageState extends State<NotificationPage>
   @override
   void initState() {
     super.initState();
-    _bloc = NotificationBloc(NotificationEmptyState());
+    _bloc = NotificationBloc();
     _searchController.addListener(() {
       _search(_searchController.value.text);
     });

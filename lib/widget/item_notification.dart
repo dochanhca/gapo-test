@@ -24,7 +24,7 @@ class _ItemNotificationState extends State<ItemNotification>
   @override
   void initState() {
     super.initState();
-    _bloc = ItemNotificationBloc(ItemNotificationEmptyState());
+    _bloc = ItemNotificationBloc();
   }
 
   @override

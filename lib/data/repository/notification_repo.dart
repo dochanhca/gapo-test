@@ -7,10 +7,10 @@ abstract class NotificationRepo {
 }
 
 class NotificationRepoImpl implements NotificationRepo {
-  final DataProvider _client = GetIt.I.get<DataProvider>();
+  final DataProvider _provider = GetIt.I.get<DataProvider>();
 
   @override
   Future<List<NotificationModel>?> getNotificationList() {
-    return _client.getNotificationList();
+    return _provider.getNotificationList();
   }
 }

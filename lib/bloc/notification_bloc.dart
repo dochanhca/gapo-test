@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:gapo_test/data/model/notification.dart';
 import 'package:gapo_test/data/repository/notification_repo.dart';
@@ -11,12 +12,9 @@ part 'notification_state.dart';
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final NotificationRepo repo = GetIt.I<NotificationRepo>();
 
-  NotificationBloc(NotificationState initialState) : super(initialState);
+  NotificationBloc() : super(NotificationEmptyState());
 
   late List<NotificationModel> dataSource;
-
-  @override
-  NotificationState get initialState => NotificationEmptyState();
 
   @override
   Stream<NotificationState> mapEventToState(NotificationEvent event) async* {
@@ -24,11 +22,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       yield NotificationLoadDataState();
       yield* _loadData();
     } else if (event is StartSearchEvent) {
-      yield NotificationSearchState('', dataSource);
+      yield NotificationSearchState(
+          textSearch: '', notificationList: dataSource);
     } else if (event is SearchEvent) {
       yield* _search(event.text);
     } else if (event is CancelSearchEvent) {
-      yield NotificationLoadDataSuccessState(dataSource);
+      yield NotificationLoadDataSuccessState(notificationList: dataSource);
     } else if (event is UpdateNotificationStatusEvent) {
       yield* _updateNotificationStatus(event.id);
     }
@@ -41,7 +40,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         yield NotificationLoadDataFailureState('Có lỗi xảy ra');
       } else {
         dataSource = loadedList;
-        yield NotificationLoadDataSuccessState(dataSource);
+        yield NotificationLoadDataSuccessState(notificationList: dataSource);
       }
     } catch (error) {
       yield NotificationLoadDataFailureState('Có lỗi xảy ra');
@@ -58,21 +57,54 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
               element.message.text.toLowerCase().contains(text.toLowerCase()))
           .toList();
     }
-    yield NotificationSearchState(text, searchResults);
+    yield NotificationSearchState(
+        textSearch: text, notificationList: searchResults);
   }
 
   Stream<NotificationState> _updateNotificationStatus(String id) async* {
-    dataSource.firstWhere((element) => element.id == id).status =
-        NotificationStatus.read.getTextValue();
     if (state is NotificationSearchState) {
-      List<NotificationModel>? searchData =
-          (state as NotificationSearchState).notificationList;
+      _updateDataSource(id);
+      List<NotificationModel>? searchData = _updateSearchList(id);
       String? text = (state as NotificationSearchState).textSearch;
-      searchData.firstWhere((element) => element.id == id).status =
-          NotificationStatus.read.getTextValue();
-      yield NotificationSearchState(text, searchData);
+
+      print('update status in search');
+      yield NotificationSearchState(
+          textSearch: text, notificationList: searchData, updatedId: id);
     } else {
-      yield NotificationLoadDataSuccessState(dataSource);
+      _updateDataSource(id);
+      yield NotificationLoadDataSuccessState(
+          notificationList: dataSource, updatedId: id);
     }
+  }
+
+  _updateDataSource(String id) {
+    int needUpdateIndex =
+        dataSource.indexWhere((element) => _eligibleToUpdate(element, id));
+    if (needUpdateIndex >= 0) {
+      dataSource[needUpdateIndex].status =
+          NotificationStatus.read.getTextValue();
+      dataSource[needUpdateIndex].updatedAt =
+          DateTime.now().millisecondsSinceEpoch;
+    }
+  }
+
+  List<NotificationModel> _updateSearchList(String id) {
+    List<NotificationModel>? searchData =
+        (state as NotificationSearchState).notificationList;
+    int needUpdateIndex =
+        searchData.indexWhere((element) => _eligibleToUpdate(element, id));
+    if (needUpdateIndex >= 0) {
+      searchData[needUpdateIndex].status =
+          NotificationStatus.read.getTextValue();
+      searchData[needUpdateIndex].updatedAt =
+          DateTime.now().millisecondsSinceEpoch;
+    }
+    return searchData;
+  }
+
+  bool _eligibleToUpdate(NotificationModel item, String id) {
+    return item.id == id &&
+        NotificationStatusExs.fromString(item.status) ==
+            NotificationStatus.unread;
   }
 }

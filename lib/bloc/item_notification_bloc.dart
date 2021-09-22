@@ -1,18 +1,20 @@
+import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:gapo_test/data/model/highlight_text.dart';
 import 'package:gapo_test/data/model/notification.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:bloc/bloc.dart';
 
 part 'item_notification_event.dart';
 
 part 'item_notification_state.dart';
 
-class ItemNotificationBloc extends Bloc<ItemNotificationEvent, ItemNotificationState>{
-  ItemNotificationBloc(ItemNotificationState initialState) : super(initialState);
+class ItemNotificationBloc
+    extends Bloc<ItemNotificationEvent, ItemNotificationState> {
+  ItemNotificationBloc() : super(ItemNotificationEmptyState());
 
   @override
-  Stream<ItemNotificationState> mapEventToState(ItemNotificationEvent event) async* {
+  Stream<ItemNotificationState> mapEventToState(
+      ItemNotificationEvent event) async* {
     if (event is ReadMessageEvent) {
       yield ItemNotificationReadMessageState();
       yield* _readMessage(event.message);
@@ -50,6 +52,12 @@ class ItemNotificationBloc extends Bloc<ItemNotificationEvent, ItemNotificationS
               text.substring(element.offset, element.offset + element.length);
         }
       });
+
+      if (temp.length < text.length) {
+        HighLightText lastText =
+            HighLightText(text: text.substring(temp.length, text.length));
+        highLightTextList.add(lastText);
+      }
     }
 
     yield ItemNotificationReadMessageSuccessState(highLightTextList);

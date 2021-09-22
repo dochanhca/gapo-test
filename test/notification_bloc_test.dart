@@ -2,9 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gapo_test/bloc/notification_bloc.dart';
 import 'package:gapo_test/data/model/notification.dart';
-import 'package:gapo_test/data/repository/notification_repo.dart';
 import 'package:gapo_test/locator.dart';
-import 'package:mocktail/mocktail.dart';
 
 final List<NotificationModel> mockData = [
   NotificationModel(
@@ -35,32 +33,81 @@ final List<NotificationModel> mockData = [
       subscription: null)
 ];
 
-class MockRepo extends Mock implements NotificationRepo {}
-
-class MockBlock extends MockBloc<NotificationEvent, NotificationState>
-    implements NotificationBloc {}
-
-class FakeLoadDataEvent extends Fake implements LoadDataEvent {}
-
-class FakeEmptyState extends Fake implements NotificationEmptyState {}
-
 main() {
-  setUpAll(() {
-    registerFallbackValue(FakeLoadDataEvent());
-    registerFallbackValue(FakeEmptyState());
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    setUpLocator();
   });
-  setUpLocator();
 
-  group('whenListen', () {
-    test("Let's mock the CounterBloc's stream!", () {
-      // Create Mock CounterBloc Instance
-      final bloc = NotificationBloc(NotificationEmptyState());
-      // bloc.add(FakeLoadDataEvent());
-
-      // Stub the listen with a fake Stream
-      // Expect that the CounterBloc instance emitted the stubbed Stream of
-      // states
-      expect(bloc.state, NotificationEmptyState());
+  group('NotificationBloc', () {
+    test('Initial State is Empty', () {
+      final NotificationBloc _bloc = NotificationBloc();
+      expect(_bloc.state, NotificationEmptyState());
     });
+
+    blocTest('start Load Data',
+        build: () => NotificationBloc(),
+        act: (NotificationBloc bloc) => bloc.add(LoadDataEvent()),
+        expect: () => [
+              NotificationLoadDataState(),
+              NotificationLoadDataSuccessState(mockData)
+            ]);
+
+    blocTest('Search with empty text',
+        build: () => NotificationBloc(),
+        act: (NotificationBloc bloc) {
+          bloc.add(LoadDataEvent());
+          bloc.add(SearchEvent(''));
+        },
+        expect: () => [
+              NotificationLoadDataState(),
+              NotificationLoadDataSuccessState(mockData),
+              NotificationSearchState('', mockData)
+            ]);
+
+    String text = 'zzzzzzzzz';
+    List<NotificationModel> searchResults = mockData
+        .where((element) =>
+            element.message.text.toLowerCase().contains(text.toLowerCase()))
+        .toList();
+    blocTest('Search with text return empty list',
+        build: () => NotificationBloc(),
+        act: (NotificationBloc bloc) {
+          bloc.add(LoadDataEvent());
+          bloc.add(SearchEvent(text));
+        },
+        expect: () => [
+              NotificationLoadDataState(),
+              NotificationLoadDataSuccessState(mockData),
+              NotificationSearchState(text, searchResults)
+            ]);
+
+    blocTest(
+      'Cancel Search Event',
+      build: () => NotificationBloc(),
+      act: (NotificationBloc bloc) {
+        bloc.add(LoadDataEvent());
+        bloc.add(SearchEvent(''));
+        bloc.add(CancelSearchEvent());
+      },
+      expect: () => [
+        NotificationLoadDataState(),
+        NotificationLoadDataSuccessState(mockData),
+        NotificationSearchState('', mockData),
+        NotificationLoadDataSuccessState(mockData),
+      ],
+    );
+
+    // blocTest('update notification status',
+    //     build: () => NotificationBloc(),
+    //     act: (NotificationBloc bloc) {
+    //   bloc.add(LoadDataEvent());
+    //   bloc.add(UpdateNotificationStatusEvent('60c2d917dfab450023476145'));
+    //     },
+    //     expect: () => [
+    //       NotificationLoadDataState(),
+    //       NotificationLoadDataSuccessState(mockData),
+    //       NotificationLoadDataSuccessState(mockData)
+    //     ]);
   });
 }
