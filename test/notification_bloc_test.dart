@@ -50,7 +50,7 @@ main() {
         act: (NotificationBloc bloc) => bloc.add(LoadDataEvent()),
         expect: () => [
               NotificationLoadDataState(),
-              NotificationLoadDataSuccessState(mockData)
+              NotificationLoadDataSuccessState(notificationList: mockData)
             ]);
 
     blocTest('Search with empty text',
@@ -61,8 +61,8 @@ main() {
         },
         expect: () => [
               NotificationLoadDataState(),
-              NotificationLoadDataSuccessState(mockData),
-              NotificationSearchState('', mockData)
+              NotificationLoadDataSuccessState(notificationList: mockData),
+              NotificationSearchState(textSearch: '',notificationList: mockData)
             ]);
 
     String text = 'zzzzzzzzz';
@@ -78,8 +78,8 @@ main() {
         },
         expect: () => [
               NotificationLoadDataState(),
-              NotificationLoadDataSuccessState(mockData),
-              NotificationSearchState(text, searchResults)
+              NotificationLoadDataSuccessState(notificationList: mockData),
+              NotificationSearchState(textSearch: text, notificationList: searchResults)
             ]);
 
     blocTest(
@@ -92,9 +92,9 @@ main() {
       },
       expect: () => [
         NotificationLoadDataState(),
-        NotificationLoadDataSuccessState(mockData),
-        NotificationSearchState('', mockData),
-        NotificationLoadDataSuccessState(mockData),
+        NotificationLoadDataSuccessState(notificationList: mockData),
+        NotificationSearchState(textSearch: '', notificationList: mockData),
+        NotificationLoadDataSuccessState(notificationList: mockData),
       ],
     );
 
