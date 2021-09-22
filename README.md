@@ -10,3 +10,6 @@
   ```GetIt.I.registerFactory<DataProvider>(() => DataProviderMock());```
  - Comment lại dòng:
   ```GetIt.I.registerFactory<DataProvider>(() => DataProviderImpl())```
+  
+3. Note:
+ - Do không lấy được image trong figma nên project đang dùng tạm Icons của flutter
